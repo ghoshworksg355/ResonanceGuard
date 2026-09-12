@@ -102,7 +102,7 @@ export function useResonanceSimulation() {
 
       // Fast throttle moves excite transient oscillations
       // Sensitivity depends on engine type
-      const transientExcitation = throttleRate * eng.throttleSensitivity * 0.8;
+      const transientExcitation = throttleRate * eng.throttleResponseRate * 0.8;
       phys.transientBoost = phys.transientBoost * 0.88 + transientExcitation;
       phys.transientBoost = Math.min(phys.transientBoost, 2.0);
 
@@ -114,7 +114,7 @@ export function useResonanceSimulation() {
       // --- Resonance band excitation ---
       // Sum contributions from all resonance bands for this engine
       let bandExcitation = 0;
-      let dominantFreq = eng.resonanceFrequency;
+      let dominantFreq = eng.primaryResonanceFrequency;
 
       for (const band of eng.resonanceBands) {
         const z = (currentThrottle - band.center) / band.width;
@@ -139,9 +139,11 @@ export function useResonanceSimulation() {
       }
 
       // --- Multi-engine coupling ---
-      // More engines → shared feedline coupling amplifies oscillations
-      // The coupling factor grows nonlinearly with engine count
-      const couplingFactor = 1 + 0.15 * (engineCountRef.current - 1) * (1 - Math.exp(-0.4 * (engineCountRef.current - 1)));
+      // Each engine has its own couplingFactor (0-1) from ENGINE_PROFILES.
+      // More engines → shared feedline coupling amplifies oscillations.
+      // The per-engine coupling factor scales how aggressively count affects resonance.
+      const n = engineCountRef.current;
+      const couplingFactor = 1 + eng.couplingFactor * (n - 1) * (1 - Math.exp(-0.4 * (n - 1)));
 
       // --- Damped oscillator model ---
       // The amplitude follows a damped driven oscillator:

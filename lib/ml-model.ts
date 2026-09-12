@@ -39,11 +39,13 @@ export function predictResonance(features: ModelFeatures): ModelOutput {
   // Feature 1: proximity to resonance band (0-1)
   const proximity = gaussianProximity(features.throttle, band.center, band.width);
 
-  // Feature 2: engine count coupling — more engines = more coupled oscillation
-  const countFactor = 1 - Math.exp(-0.35 * (features.engineCount - 1));
+  // Feature 2: engine count coupling — uses the engine's own couplingFactor
+  // Engines with higher couplingFactor are more susceptible to multi-engine resonance
+  const countFactor =
+    engine.couplingFactor * (1 - Math.exp(-0.35 * (features.engineCount - 1)));
 
-  // Feature 3: engine-specific sensitivity
-  const sensitivity = engine.riskSensitivity;
+  // Feature 3: engine-specific sensitivity (from ENGINE_PROFILES)
+  const sensitivity = engine.sensitivityMultiplier;
 
   // Feature 4: throttle extremity penalty — very low throttle causes instability too
   const lowThrottlePenalty = features.throttle < 0.5 ? (0.5 - features.throttle) * 2 : 0;
@@ -143,6 +145,7 @@ export function recommendedThrottleAdjustment(
 
   // If oscillation amplitude is high, move faster
   const amplitudeBoost = Math.min(1, oscillationAmplitude / (ENGINES[engineId].chamberPressure * 0.1));
+  // Use the engine's couplingFactor to scale urgency of correction
   const adjustedMagnitude = Math.min(0.02 + amplitudeBoost * 0.03, magnitude);
 
   return {

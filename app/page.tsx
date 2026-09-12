@@ -194,7 +194,7 @@ export default function Home() {
                 <div className="rounded-md bg-slate-800/50 p-2 text-center">
                   <div className="text-slate-500">Feedline F</div>
                   <div className="mt-0.5 font-mono text-slate-200">
-                    {engine.resonanceFrequency} Hz
+                    {engine.primaryResonanceFrequency} Hz
                   </div>
                 </div>
               </div>
